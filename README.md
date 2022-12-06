@@ -15,9 +15,18 @@ This repo is an attempt to experimentally determine these curves.
 
 ## Method
 
-- Record synthesiser with 2 operators at ratio 1:1, with output levels in increments of 5%
-- Apply fourier transform to get the amplitudes of the sidebands
+- Determine by listening for settings where fundamental is zero, these are rough guidelines that will be needed for root finding algorithm.
+- Record synthesiser with 2 operators at ratio 1:3, with output levels in increments of 5%
+- Remove any DC offsets
+- Slice the file for each amplitude level
+- Normalise files to just under 0.0dB
+- Apply fourier transform to get the amplitudes of the fundamental frequency
 - Use inverse Bessel functions to get modulation indices
+
+## Issues encountered
+
+It's better if we don't use operators at ratio 1:1. Because if we do we get interference from negative frequency sidebands!  
+Inverse Bessel functions don't exist. Need to use some root finding algorithm  
 
 ## Resources
 
