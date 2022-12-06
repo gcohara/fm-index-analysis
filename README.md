@@ -1,5 +1,11 @@
 # FM Synth Modulation Index Analysis
 
+## Aim
+
+Produce a graph like the one below, but for the Korg Opsix
+
+![dx7_graph](images/chowning_dx7_index_graph)
+
 ## Intro
 
 The variable that determines the amplitude of the sidebands in FM synthesis is known as the modulation index, and it is defined as follows:  
