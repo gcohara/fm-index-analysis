@@ -3,6 +3,7 @@ from scipy.io import wavfile as wav
 from scipy.fftpack import fft, fftfreq
 import scipy
 import os
+from math import exp
 from os.path import isfile, join
 import numpy as np
 # rate, data = wav.read('opsix/normed_opsix-ratio1-1-output-5.wav')
@@ -42,7 +43,6 @@ def read_wav_normalised(wav_path):
 
 def get_file_list(path):
     files = [join(path, f) for f in os.listdir(path) if isfile(join(path, f)) and f.endswith(".wav")]
-    print(files)
     return files
 
 def get_ffts(wav_path):
@@ -65,22 +65,58 @@ def get_fundamental_amplitude(fundamental, xf, yf):
     return abs(yf[i] * 2)
 
 ## Need to consider negative amplitudes, so need to be able to select the intervals
-def reverse_bessel_function(fundamental_amp):
-    f = lambda a : scipy.special.jv(0.0, a) - fundamental_amp
-    result = scipy.optimize.brentq(f, 0, 2.4)
+## Would be good to store some state
+def reverse_bessel_function(fundamental_amp, output_level):
+    if output_level < 43:
+        f = lambda a : scipy.special.jv(0.0, a) - fundamental_amp
+        result = scipy.optimize.brentq(f, 0, 2.4)
+    elif output_level in range(43, 60):
+        f = lambda a : scipy.special.jv(0.0, a) + fundamental_amp
+        result = scipy.optimize.brentq(f, 2.4, 3.83)
+    elif output_level == 60:
+        f = lambda a : scipy.special.jv(0.0, a) + fundamental_amp
+        result = scipy.optimize.brentq(f, 3.83, 5.3)
+    elif output_level in range(65, 75):
+        f = lambda a : scipy.special.jv(0.0, a) - fundamental_amp
+        result = scipy.optimize.brentq(f, 5.3, 7.01)
+    elif output_level in range(65, 83):
+        f = lambda a : scipy.special.jv(0.0, a) - fundamental_amp
+        result = scipy.optimize.brentq(f, 7.01, 10.1735)
+    elif output_level in range(83, 90):
+        f = lambda a : scipy.special.jv(0.0, a) + fundamental_amp
+        result = scipy.optimize.brentq(f, 8.65, 10.1735)
+    elif output_level in range(90, 98):
+        f = lambda a : scipy.special.jv(0.0, a) + fundamental_amp
+        result = scipy.optimize.brentq(f, 10.1735, 13.3237)
+    elif output_level > 97:
+        f = lambda a : scipy.special.jv(0.0, a) - fundamental_amp
+        result = scipy.optimize.brentq(f, 10.1735, 13.3237)
     return result
 
-def estimate_modulation_index(wav_path):
+def estimate_modulation_index(wav_path,output_level):
     xf, yf = get_ffts(wav_path)
     fundamental_amp = get_fundamental_amplitude(130.8, xf, yf)
-    print(fundamental_amp)
-    modulation_index_estimate = reverse_bessel_function(fundamental_amp)
+    # print(fundamental_amp)
+    modulation_index_estimate = reverse_bessel_function(fundamental_amp,output_level)
     return modulation_index_estimate
     
 if __name__ == "__main__":
     path = "opsix"
-    files = get_file_list(path)
-    for f in files:
-        print(f)
-        result = estimate_modulation_index(f)
+    files = sorted(get_file_list(path))
+    results = []
+    for (i, f) in enumerate(files):
+        output_level = i * 5
+        result = estimate_modulation_index(f, output_level)
         print(result)
+        results.append(result)
+    x = [i * 5 for i in range(len(results))]
+    f = lambda xs, b : [exp(x * b) - 0.93 for x in xs]
+    curve_results = scipy.optimize.curve_fit(f, x, results)
+    b = curve_results[0][0]    
+    print(b)
+    curve_xs = [x for x in range(100)]
+    curve_ys = f(curve_xs, b)
+    
+    plt.plot(x, results)
+    plt.plot(curve_xs, curve_ys)
+    plt.show()
